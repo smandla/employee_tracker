@@ -9,9 +9,10 @@ const connection = mysql.createConnection({
   password: "root",
   database: "employee_db",
 });
-connection.query(`SELECT * FROM department`, function (err, results) {
-  console.table(results);
-});
+// connection.query(`SELECT * FROM department`, function (err, results) {
+//   console.log("\n");
+//   console.table(results);
+// });
 //   const [rows, fields] = await connection.execute("SELECT * FROM department");
 //   console.table(rows);
 
