@@ -89,7 +89,7 @@ function addDepartment() {
     // break;
   });
 }
-
+var managerId;
 function addEmployee() {
   //  TODO: fix role choices with roles from db
   const questions = [
@@ -109,23 +109,34 @@ function addEmployee() {
     },
   ];
   inquirer.prompt(questions).then((answers) => {
-    console.log(answers.role);
-
+    console.log(answers.role, answers.manager_id.split(" ")[0]);
     connection.query(
-      `SELECT id FROM role WHERE name="${answers.department}"`,
+      `SELECT id FROM employee WHERE first_name="${
+        answers.manager_id.split(" ")[0]
+      }"`,
       function (err, results) {
         console.log("\n");
-        console.log(results);
-        id = results[0].id;
-        console.log("id", id);
-        console.log(
-          `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, null`})`
-        );
+        // console.log(results[]);
+        managerId = results[0].id;
+        // return results[0].id;
         connection.query(
-          `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, null`})`,
+          `SELECT id FROM role WHERE title="${answers.role}"`,
           function (err, results) {
-            // console.log("\n");
-            console.log(`\n Added ${answers.first_name} to the emloyee table`);
+            console.log("\n");
+            console.log(results);
+            id = results[0].id;
+            console.log("id", id);
+            // console.log("manager", id_manager);
+            console.log(
+              `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, ${managerId}`})`
+            );
+            // connection.query(
+            //   `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, null`})`,
+            //   function (err, results) {
+            //     // console.log("\n");
+            //     console.log(`\n Added ${answers.first_name} to the emloyee table`);
+            //   }
+            // );
           }
         );
       }
