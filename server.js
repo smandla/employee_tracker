@@ -56,10 +56,10 @@ function chooseOption() {
         addDepartment();
         break;
       case "Add Employee":
-        addDepartment();
+        addEmployee();
         break;
       case "Add Role":
-        addDepartment();
+        // addDepartment();
         break;
       default:
         return "";
@@ -92,15 +92,24 @@ function addEmployee() {
       name: "role",
       message: "What is the employee's role?",
       type: "list",
-      choices: ["HR", "...", "..."],
+      choices: [0, 1, 2],
+    },
+    {
+      name: "manager_id",
+      message: "What is the employee's role?",
+      type: "list",
+      choices: [0, 1, 2],
     },
   ];
   inquirer.prompt(questions).then((answers) => {
+    console.log(
+      `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${answers.role}, null`})`
+    );
     connection.query(
-      `INSERT INTO department (name) VALUES (${`"${answers.department_name}"`})`,
+      `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${answers.role}, null`})`,
       function (err, results) {
         // console.log("\n");
-        console.log(`\n Added ${answers.department_name} to the database`);
+        console.log(`\n Added ${answers.first_name} to the emloyee table`);
       }
     );
     chooseOption();
