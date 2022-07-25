@@ -15,9 +15,7 @@ const connection = mysql.createConnection({
 // });
 //   const [rows, fields] = await connection.execute("SELECT * FROM department");
 //   console.table(rows);
-
-function init() {
-  //   data();
+function chooseOption() {
   const optionQuestion = {
     name: "option",
     message: "What would you like to do?",
@@ -35,6 +33,39 @@ function init() {
   };
   inquirer.prompt(optionQuestion).then((answers) => {
     console.log(answers);
+    switch (answers.option) {
+      case "View All Departments":
+        logTable(`SELECT * FROM department`);
+
+        break;
+      case "View All Employees":
+        connection.query(`SELECT * FROM employee`, function (err, results) {
+          console.log("\n");
+          console.table(results);
+        });
+        chooseOption();
+        break;
+      case "View All Roles":
+        connection.query(`SELECT * FROM role`, function (err, results) {
+          console.log("\n");
+          console.table(results);
+        });
+        chooseOption();
+        break;
+      default:
+        return "";
+    }
   });
+}
+function logTable(stmt) {
+  connection.query(stmt, function (err, results) {
+    console.log("\n");
+    console.table(results);
+  });
+  chooseOption();
+}
+function init() {
+  //   data();
+  chooseOption();
 }
 init();
