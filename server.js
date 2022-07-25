@@ -9,10 +9,15 @@ const connection = mysql.createConnection({
   password: "root",
   database: "employee_db",
 });
-// connection.query(`SELECT * FROM department`, function (err, results) {
-//   console.log("\n");
-//   console.table(results);
-// });
+
+var roles = [];
+// connection.query(
+//   `SELECT id FROM department WHERE name="HR"`,
+//   function (err, results) {
+//     console.log("\n");
+//     console.log(results[0].id);
+//   }
+// );
 //   const [rows, fields] = await connection.execute("SELECT * FROM department");
 //   console.table(rows);
 function chooseOption() {
@@ -116,23 +121,55 @@ function addEmployee() {
     // break;
   });
 }
+var id;
 function addRole() {
   const questions = [
     { name: "role_name", message: "What is the name of the role?" },
     { name: "salary", message: "What is the salary of the role?" },
-    { name: "department", message: "What department does the role belong to?" },
+    {
+      name: "department",
+      message: "What department does the role belong to?",
+      type: "list",
+      choices: getDepartment(),
+    },
   ];
   inquirer.prompt(questions).then((answers) => {
+    console.log(answers.department);
+
     connection.query(
-      `INSERT INTO role (title, salary, department_id) VALUES (${`"${answers.role_name}",${answers.salary},1`})`,
+      `SELECT id FROM department WHERE name="${answers.department}"`,
       function (err, results) {
-        // console.log("\n");
-        console.log(`\n Added ${answers.role_name} to the role table`);
+        console.log("\n");
+        console.log(results);
+        id = results[0].id;
+        console.log("id", id);
+        console.log(
+          `INSERT INTO role (title, salary, department_id) VALUES (${`"${answers.role_name}",${answers.salary},${id}`})`
+        );
+        connection.query(
+          `INSERT INTO role (title, salary, department_id) VALUES (${`"${answers.role_name}",${answers.salary},${id}`})`,
+          function (err, results) {
+            // console.log("\n");
+            console.log(`\n Added ${answers.role_name} to the role table`);
+          }
+        );
       }
     );
+
     chooseOption();
     // break;
   });
+}
+function getDepartment() {
+  connection.query("SELECT * FROM department", function (err, results) {
+    if (results) {
+      results.forEach(function (department) {
+        // console.log(department);
+        roles.push(department.name);
+      });
+    }
+  });
+  return roles;
 }
 function logTable(stmt) {
   connection.query(stmt, function (err, results) {
@@ -143,6 +180,8 @@ function logTable(stmt) {
 }
 function init() {
   //   data();
+  //   getRoles();
+  getDepartment();
   chooseOption();
 }
 init();
