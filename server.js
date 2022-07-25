@@ -59,7 +59,7 @@ function chooseOption() {
         addEmployee();
         break;
       case "Add Role":
-        // addDepartment();
+        addRole();
         break;
       default:
         return "";
@@ -116,22 +116,24 @@ function addEmployee() {
     // break;
   });
 }
-// function addDepartment() {
-//     const questions = [
-//       { name: "department_name", message: "What is the name of the department?" },
-//     ];
-//     inquirer.prompt(questions).then((answers) => {
-//       connection.query(
-//         `INSERT INTO department (name) VALUES (${`"${answers.department_name}"`})`,
-//         function (err, results) {
-//           // console.log("\n");
-//           console.log(`\n Added ${answers.department_name} to the database`);
-//         }
-//       );
-//       chooseOption();
-//       // break;
-//     });
-//   }
+function addRole() {
+  const questions = [
+    { name: "role_name", message: "What is the name of the role?" },
+    { name: "salary", message: "What is the salary of the role?" },
+    { name: "department", message: "What department does the role belong to?" },
+  ];
+  inquirer.prompt(questions).then((answers) => {
+    connection.query(
+      `INSERT INTO role (title, salary, department_id) VALUES (${`"${answers.role_name}",${answers.salary},1`})`,
+      function (err, results) {
+        // console.log("\n");
+        console.log(`\n Added ${answers.role_name} to the role table`);
+      }
+    );
+    chooseOption();
+    // break;
+  });
+}
 function logTable(stmt) {
   connection.query(stmt, function (err, results) {
     console.log("\n");
