@@ -11,6 +11,8 @@ const connection = mysql.createConnection({
 });
 
 var roles = [];
+var departments = [];
+var employees = ["None"];
 // connection.query(
 //   `SELECT id FROM department WHERE name="HR"`,
 //   function (err, results) {
@@ -97,26 +99,38 @@ function addEmployee() {
       name: "role",
       message: "What is the employee's role?",
       type: "list",
-      choices: [0, 1, 2],
+      choices: getRoles(),
     },
     {
       name: "manager_id",
-      message: "What is the employee's role?",
+      message: "Who is the employee's manager?",
       type: "list",
-      choices: [0, 1, 2],
+      choices: getManagers(),
     },
   ];
   inquirer.prompt(questions).then((answers) => {
-    console.log(
-      `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${answers.role}, null`})`
-    );
+    console.log(answers.role);
+
     connection.query(
-      `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${answers.role}, null`})`,
+      `SELECT id FROM role WHERE name="${answers.department}"`,
       function (err, results) {
-        // console.log("\n");
-        console.log(`\n Added ${answers.first_name} to the emloyee table`);
+        console.log("\n");
+        console.log(results);
+        id = results[0].id;
+        console.log("id", id);
+        console.log(
+          `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, null`})`
+        );
+        connection.query(
+          `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, null`})`,
+          function (err, results) {
+            // console.log("\n");
+            console.log(`\n Added ${answers.first_name} to the emloyee table`);
+          }
+        );
       }
     );
+
     chooseOption();
     // break;
   });
@@ -165,11 +179,34 @@ function getDepartment() {
     if (results) {
       results.forEach(function (department) {
         // console.log(department);
-        roles.push(department.name);
+        department.push(department.name);
+      });
+    }
+  });
+  return department;
+}
+function getRoles() {
+  connection.query("SELECT * FROM role", function (err, results) {
+    if (results) {
+      results.forEach(function (role) {
+        // console.log(role);
+        roles.push(role.title);
+        // department.push(roles.);
       });
     }
   });
   return roles;
+}
+function getManagers() {
+  connection.query("SELECT * FROM employee", function (err, results) {
+    if (results) {
+      results.forEach(function (employee) {
+        // console.log(department);
+        employees.push(`${employee.first_name} ${employee.last_name}`);
+      });
+    }
+  });
+  return employees;
 }
 function logTable(stmt) {
   connection.query(stmt, function (err, results) {
@@ -180,8 +217,8 @@ function logTable(stmt) {
 }
 function init() {
   //   data();
-  //   getRoles();
-  getDepartment();
+  getRoles();
+  //   getDepartment();
   chooseOption();
 }
 init();
