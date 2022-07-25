@@ -52,11 +52,77 @@ function chooseOption() {
         });
         chooseOption();
         break;
+      case "Add Department":
+        addDepartment();
+        break;
+      case "Add Employee":
+        addDepartment();
+        break;
+      case "Add Role":
+        addDepartment();
+        break;
       default:
         return "";
     }
   });
 }
+function addDepartment() {
+  const questions = [
+    { name: "department_name", message: "What is the name of the department?" },
+  ];
+  inquirer.prompt(questions).then((answers) => {
+    connection.query(
+      `INSERT INTO department (name) VALUES (${`"${answers.department_name}"`})`,
+      function (err, results) {
+        // console.log("\n");
+        console.log(`\n Added ${answers.department_name} to the database`);
+      }
+    );
+    chooseOption();
+    // break;
+  });
+}
+
+function addEmployee() {
+  //  TODO: fix role choices with roles from db
+  const questions = [
+    { name: "first_name", message: "What is the employee's first name?" },
+    { name: "last_name", message: "What is the employee's last name?" },
+    {
+      name: "role",
+      message: "What is the employee's role?",
+      type: "list",
+      choices: ["HR", "...", "..."],
+    },
+  ];
+  inquirer.prompt(questions).then((answers) => {
+    connection.query(
+      `INSERT INTO department (name) VALUES (${`"${answers.department_name}"`})`,
+      function (err, results) {
+        // console.log("\n");
+        console.log(`\n Added ${answers.department_name} to the database`);
+      }
+    );
+    chooseOption();
+    // break;
+  });
+}
+// function addDepartment() {
+//     const questions = [
+//       { name: "department_name", message: "What is the name of the department?" },
+//     ];
+//     inquirer.prompt(questions).then((answers) => {
+//       connection.query(
+//         `INSERT INTO department (name) VALUES (${`"${answers.department_name}"`})`,
+//         function (err, results) {
+//           // console.log("\n");
+//           console.log(`\n Added ${answers.department_name} to the database`);
+//         }
+//       );
+//       chooseOption();
+//       // break;
+//     });
+//   }
 function logTable(stmt) {
   connection.query(stmt, function (err, results) {
     console.log("\n");
