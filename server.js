@@ -3,6 +3,10 @@ const mysql = require("mysql2");
 //promise wrapper
 const mysqlPromise = require("mysql2/promise");
 
+/**
+ *
+ */
+
 const connection = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -13,6 +17,13 @@ const connection = mysql.createConnection({
 var roles = [];
 var departments = [];
 var employees = ["None"];
+connection.query(
+  `SELECT role.id, role.title, department.name AS department, role.salary FROM role INNER JOIN department ON role.department_id=department.id`,
+  function (err, results) {
+    console.log("\n");
+    console.table(results);
+  }
+);
 // connection.query(
 //   `SELECT id FROM department WHERE name="HR"`,
 //   function (err, results) {
@@ -49,6 +60,7 @@ function chooseOption() {
         connection.query(`SELECT * FROM employee`, function (err, results) {
           console.log("\n");
           console.table(results);
+          console.log("\n");
         });
         chooseOption();
         break;
@@ -56,6 +68,7 @@ function chooseOption() {
         connection.query(`SELECT * FROM role`, function (err, results) {
           console.log("\n");
           console.table(results);
+          console.log("\n");
         });
         chooseOption();
         break;
@@ -68,9 +81,31 @@ function chooseOption() {
       case "Add Role":
         addRole();
         break;
+      case "Update Employee Role":
+        updateEmployeeRole();
+        break;
       default:
         return "";
     }
+  });
+}
+function updateEmployeeRole() {
+  const questions = [
+    {
+      name: "employee_id",
+      message: "Which employee's role do you want to update?",
+      type: "list",
+      choices: getManagers(),
+    },
+    {
+      name: "employee_role",
+      message: "Which role do you want to assign the selected employee?",
+      type: "list",
+      choices: getRoles(),
+    },
+  ];
+  inquirer.prompt(questions).then((answers) => {
+    console.log(answers);
   });
 }
 function addDepartment() {
@@ -110,10 +145,15 @@ function addEmployee() {
   ];
   inquirer.prompt(questions).then((answers) => {
     console.log(answers.role, answers.manager_id.split(" ")[0]);
+    /**
+     * TODO: add last name also for better check
+     * TODO: add conditional for if "None" is entered
+     */
+
     connection.query(
       `SELECT id FROM employee WHERE first_name="${
         answers.manager_id.split(" ")[0]
-      }"`,
+      }" AND last_name="${answers.manager_id.split(" ")[1]}"`,
       function (err, results) {
         console.log("\n");
         // console.log(results[]);
@@ -130,13 +170,15 @@ function addEmployee() {
             console.log(
               `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, ${managerId}`})`
             );
-            // connection.query(
-            //   `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, null`})`,
-            //   function (err, results) {
-            //     // console.log("\n");
-            //     console.log(`\n Added ${answers.first_name} to the emloyee table`);
-            //   }
-            // );
+            connection.query(
+              `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, ${managerId}`})`,
+              function (err, results) {
+                // console.log("\n");
+                console.log(
+                  `\n Added ${answers.first_name} to the emloyee table`
+                );
+              }
+            );
           }
         );
       }
@@ -206,6 +248,7 @@ function getRoles() {
       });
     }
   });
+  console.log(roles);
   return roles;
 }
 function getManagers() {
@@ -223,6 +266,7 @@ function logTable(stmt) {
   connection.query(stmt, function (err, results) {
     console.log("\n");
     console.table(results);
+    console.log("\n");
   });
   chooseOption();
 }
