@@ -1,5 +1,7 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
+require("dotenv").config();
+require("console.table");
 //promise wrapper
 const mysqlPromise = require("mysql2/promise");
 
@@ -17,13 +19,11 @@ const connection = mysql.createConnection({
 var roles = [];
 var departments = [];
 var employees = ["None"];
-connection.query(
-  `SELECT role.id, role.title, department.name AS department, role.salary FROM role INNER JOIN department ON role.department_id=department.id`,
-  function (err, results) {
-    console.log("\n");
-    console.table(results);
-  }
-);
+
+/**
+ * SELECT role.id, role.title, department.name AS department, role.salary FROM role INNER JOIN department ON role.department_id=department.id
+ *
+ */
 // connection.query(
 //   `SELECT id FROM department WHERE name="HR"`,
 //   function (err, results) {
@@ -40,12 +40,16 @@ function chooseOption() {
     type: "list",
     choices: [
       "View All Employees",
+      "View Employees By Manager",
       "Add Employee",
       "Update Employee Role",
       "View All Roles",
       "Add Role",
       "View All Departments",
       "Add Department",
+      "Delete Department",
+      "Delete Role",
+      "Delete Employee",
       "Exit",
     ],
   };
@@ -57,19 +61,25 @@ function chooseOption() {
 
         break;
       case "View All Employees":
-        connection.query(`SELECT * FROM employee`, function (err, results) {
-          console.log("\n");
-          console.table(results);
-          console.log("\n");
-        });
+        connection.query(
+          `SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(m.first_name, " ", m.last_name) as m FROM employee INNER JOIN role ON employee.role_id=role.id INNER JOIN department ON department.id=role.department_id LEFT JOIN employee m on m.id=employee.manager_id`,
+          function (err, results) {
+            console.log("\n");
+            console.table(results);
+            console.log("\n");
+          }
+        );
         chooseOption();
         break;
       case "View All Roles":
-        connection.query(`SELECT * FROM role`, function (err, results) {
-          console.log("\n");
-          console.table(results);
-          console.log("\n");
-        });
+        connection.query(
+          `SELECT role.id, role.title, department.name AS department, role.salary FROM role INNER JOIN department ON role.department_id=department.id`,
+          function (err, results) {
+            console.log("\n");
+            console.table(results);
+            console.log("\n");
+          }
+        );
         chooseOption();
         break;
       case "Add Department":
@@ -83,6 +93,17 @@ function chooseOption() {
         break;
       case "Update Employee Role":
         updateEmployeeRole();
+        // chooseOption();
+        break;
+      case "View Employees By Manager":
+        connection.query(
+          `SELECT CONCAT(employee.first_name, " ", employee.last_name) AS name,  CONCAT(manager.first_name, " ", manager.last_name) as manager FROM employee LEFT JOIN employee manager on manager.id=employee.manager_id`,
+          function (err, results) {
+            console.log("\n");
+            console.table(results);
+          }
+        );
+        chooseOption();
         break;
       default:
         return "";
@@ -90,22 +111,57 @@ function chooseOption() {
   });
 }
 function updateEmployeeRole() {
+  console.log("employees", getEmployees());
   const questions = [
     {
       name: "employee_id",
       message: "Which employee's role do you want to update?",
       type: "list",
-      choices: getManagers(),
+      choices: employees,
     },
     {
       name: "employee_role",
       message: "Which role do you want to assign the selected employee?",
       type: "list",
-      choices: getRoles(),
+      choices: roles,
     },
   ];
   inquirer.prompt(questions).then((answers) => {
     console.log(answers);
+    connection.query(
+      `SELECT id FROM employee WHERE first_name="${
+        answers.employee_id.split(" ")[0]
+      }" AND last_name="${answers.employee_id.split(" ")[1]}"`,
+      function (err, results) {
+        console.log("\n");
+        // console.log(results[]);
+        employeeId = results[0].id;
+        // return results[0].id;
+        connection.query(
+          `SELECT id FROM role WHERE title="${answers.employee_role}"`,
+          function (err, results) {
+            console.log("\n");
+            console.log(results);
+            id = results[0].id;
+            console.log("id", id);
+            // console.log("manager", id_manager);
+
+            connection.query(
+              `UPDATE employee SET role_id='${id}' WHERE id='${employeeId}'`,
+              function (err, results) {
+                // console.log("\n");
+                console.log(
+                  `\n Updated ${
+                    answers.employee_id.split(" ")[0]
+                  } to the employee table`
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+    chooseOption();
   });
 }
 function addDepartment() {
@@ -124,9 +180,9 @@ function addDepartment() {
     // break;
   });
 }
-var managerId;
+var employeeId;
 function addEmployee() {
-  //  TODO: fix role choices with roles from db
+  // console.log("employees", getEmployees());
   const questions = [
     { name: "first_name", message: "What is the employee's first name?" },
     { name: "last_name", message: "What is the employee's last name?" },
@@ -134,13 +190,13 @@ function addEmployee() {
       name: "role",
       message: "What is the employee's role?",
       type: "list",
-      choices: getRoles(),
+      choices: roles,
     },
     {
       name: "manager_id",
       message: "Who is the employee's manager?",
       type: "list",
-      choices: getManagers(),
+      choices: employees,
     },
   ];
   inquirer.prompt(questions).then((answers) => {
@@ -151,42 +207,58 @@ function addEmployee() {
      */
 
     connection.query(
-      `SELECT id FROM employee WHERE first_name="${
-        answers.manager_id.split(" ")[0]
-      }" AND last_name="${answers.manager_id.split(" ")[1]}"`,
+      `SELECT id FROM role WHERE title="${answers.role}"`,
       function (err, results) {
-        console.log("\n");
-        // console.log(results[]);
-        managerId = results[0].id;
-        // return results[0].id;
-        connection.query(
-          `SELECT id FROM role WHERE title="${answers.role}"`,
-          function (err, results) {
-            console.log("\n");
-            console.log(results);
-            id = results[0].id;
-            console.log("id", id);
-            // console.log("manager", id_manager);
-            console.log(
-              `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, ${managerId}`})`
-            );
-            connection.query(
-              `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, ${managerId}`})`,
-              function (err, results) {
-                // console.log("\n");
-                console.log(
-                  `\n Added ${answers.first_name} to the emloyee table`
-                );
-              }
-            );
-          }
-        );
+        console.log(results[0]);
+        id = results[0].id;
+        if (answers.manager_id === "None") {
+          console.log(
+            `INSERT INTO employee (first_name, last_name, role_id) VALUES ("${answers.first_name}","${answers.last_name}","${id}")`
+          );
+          connection.query(
+            `INSERT INTO employee (first_name, last_name, role_id) VALUES ("${answers.first_name}","${answers.last_name}","${id}")`,
+            function (err, results) {
+              console.log(
+                `\n Added ${answers.first_name} to the emloyee table`
+              );
+            }
+          );
+        } else {
+          // console.log(answers.first_name, answers.last_name);
+          addEmployeeWManager(answers, id);
+        }
       }
     );
-
     chooseOption();
     // break;
   });
+}
+
+function addEmployeeWManager(answers, roleId) {
+  console.log(
+    `SELECT id FROM employee WHERE first_name="${
+      answers.manager_id.split(" ")[0]
+    }" AND last_name="${answers.manager_id.split(" ")[1]}"`
+  );
+  connection.query(
+    `SELECT id FROM employee WHERE first_name="${
+      answers.manager_id.split(" ")[0]
+    }" AND last_name="${answers.manager_id.split(" ")[1]}"`,
+    function (err, results) {
+      console.log(results);
+
+      employeeId = results[0].id;
+      console.log(
+        `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${roleId}, ${employeeId}`})`
+      );
+      connection.query(
+        `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${roleId}, ${employeeId}`})`,
+        function (err, results) {
+          console.log(`\n Added ${answers.first_name} to the emloyee table`);
+        }
+      );
+    }
+  );
 }
 var id;
 function addRole() {
@@ -197,7 +269,7 @@ function addRole() {
       name: "department",
       message: "What department does the role belong to?",
       type: "list",
-      choices: getDepartment(),
+      choices: departments,
     },
   ];
   inquirer.prompt(questions).then((answers) => {
@@ -232,11 +304,11 @@ function getDepartment() {
     if (results) {
       results.forEach(function (department) {
         // console.log(department);
-        department.push(department.name);
+        departments.push(department.name);
       });
     }
   });
-  return department;
+  return departments;
 }
 function getRoles() {
   connection.query("SELECT * FROM role", function (err, results) {
@@ -248,10 +320,9 @@ function getRoles() {
       });
     }
   });
-  console.log(roles);
   return roles;
 }
-function getManagers() {
+function getEmployees() {
   connection.query("SELECT * FROM employee", function (err, results) {
     if (results) {
       results.forEach(function (employee) {
@@ -271,9 +342,42 @@ function logTable(stmt) {
   chooseOption();
 }
 function init() {
-  //   data();
   getRoles();
-  //   getDepartment();
+  getEmployees();
+  getDepartment();
   chooseOption();
 }
 init();
+/**
+ * 
+    // connection.query(
+    //   `SELECT id FROM employee WHERE first_name="${
+    //     answers.manager_id.split(" ")[0]
+    //   }" AND last_name="${answers.manager_id.split(" ")[1]}"`,
+    //   function (err, results) {
+    //     console.log("\n");
+    //     // console.log(results[]);
+    //     employeeId = results[0].id;
+    //     // return results[0].id;
+    //     connection.query(
+    //       `SELECT id FROM role WHERE title="${answers.role}"`,
+    //       function (err, results) {
+    //         console.log("\n");
+    //         console.log(results);
+    //         id = results[0].id;
+
+    //         const query =
+    //           answers.manager_id === "None"
+    //             ? `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${answers.first_name}","${answers.last_name}","${id}")`
+    //             : `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (${`"${answers.first_name}","${answers.last_name}",${id}, ${employeeId}`})`;
+    //         connection.query(query, function (err, results) {
+    //           // console.log("\n");
+    //           console.log(
+    //             `\n Added ${answers.first_name} to the emloyee table`
+    //           );
+    //         });
+    //       }
+    //     );
+    //   }
+    // );
+ */
